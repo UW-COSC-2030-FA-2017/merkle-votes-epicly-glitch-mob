@@ -4,7 +4,7 @@
 //look at descriptions in pMT.h for guidance on what you might need for these function to actually do
 bTREE::bTREE()
 {
-	last_ = NULL;
+	//last_ = NULL;
 	tree_ = NULL;
 	size_ = 0;
 }
@@ -25,35 +25,6 @@ bool bTREE::empty() const
 	return empty;
 }
 
-int bTREE::getHeight() const
-{
-	int height = 0;
-	if (tree_ != NULL)
-	{
-		treeNode *ptr = tree_;
-		while (ptr != NULL)
-		{
-			ptr = ptr->left_;
-			height++;
-		}
-	}
-	return height;
-}
-
-bool bTREE::balanced()
-{
-
-	bool result = true;
-	//cout << pow(2, getHeight()) - 1 << endl;
-	//cout << size_ << endl;
-	if (pow(2, getHeight())-1 > size_)
-	{
-		result = false;
-	}
-	return result;
-
-}
-
 void bTREE::destroy(treeNode *subtree)
 {
 	if (subtree != NULL)
@@ -67,7 +38,7 @@ void bTREE::destroy(treeNode *subtree)
 
 int bTREE::dataInserted()
 {
-	return 0;
+	return leaves_.size();
 }
 
 int bTREE::numberOfNodes()
@@ -78,15 +49,14 @@ int bTREE::numberOfNodes()
 int bTREE::insert(string data, int time)
 {
 	int ops;
-	if (empty())
+	if (empty()) //first node
 	{
-		//cout << "empty" << endl;
 		tree_ = new treeNode(data, time);
 		if (tree_ != NULL)
 		{
 			ops = 1;
 			size_++;
-			last_ = tree_;
+			leaves_.insert(leaves_.begin(), tree_);
 		}
 		else
 		{
@@ -95,148 +65,177 @@ int bTREE::insert(string data, int time)
 	}
 	else
 	{
-		insertInorder(data, time);
-		if (last_ != NULL)
+		vector<treeNode*>::iterator it = leaves_.begin();
+		while( it != leaves_.end())
 		{
-			size_++;
-			ops = 1;
+			if (time <= (*it)->timeStamp_)
+			{
+				break;
+			}
+			it++;
 		}
-		else
+		
+		if (it == leaves_.end()) // if largest timeStamp add to right side of last node
 		{
-			ops = -1;
+			it--;
+			treeNode *temp = NULL;
+			temp = new treeNode("hash", -1, false, (*it)->root_); //create branch node
+			if (temp != NULL) //check if memory allocated
+			{
+				//setup pointers
+				temp->left_ = *it;
+				(*it)->root_ = temp;
+				if (*it != tree_)
+				{
+					if (temp->root_->left_ == *it)
+					{
+						temp->root_->left_ = temp;
+					}
+					else
+					{
+						temp->root_->right_ = temp;
+					}
+				}
+
+				temp->right_ = new treeNode(data, time, true, temp); //create new leaf node
+				if (temp->right_ != NULL) //check if memory allocated
+				{
+					temp->right_->root_ = temp;
+					leaves_.push_back(temp->right_); //add new leaf to end of leaves vector
+					size_ += 2;
+					ops = 1;
+				}
+				else
+				{
+					ops = -1;
+				}
+			}
+			else
+			{
+				ops = -1;
+			}
 		}
+
+		else //add to left side of node
+		{
+			treeNode *temp = NULL;
+			temp = new treeNode("hash", -1, false, (*it)->root_); //create branch node
+			if (temp != NULL) //check if memory allocated
+			{
+				//setup pointers
+				temp->right_ = *it;
+				(*it)->root_ = temp;
+				if (temp->root_->left_ == *it)
+				{
+					temp->root_->left_ = temp;
+				}
+				else
+				{
+					temp->root_->right_ = temp;
+				}
+
+				temp->left_ = new treeNode(data, time, true, *it); //create new leaf node
+				if (temp->left_ != NULL) //check if memory allocated
+				{
+					temp->left_->root_ = temp;
+					leaves_.insert(it, temp->left_); //add new leaf to leaves vector
+					size_ += 2;
+					ops = 1;
+				}
+				else
+				{
+					ops = -1;
+				}
+			}
+			else
+			{
+				ops = -1;
+			}
+		}
+	}
+	while (tree_->root_ != NULL) //make sure tree_ = root node
+	{
+		tree_ = tree_->root_;
 	}
 	return ops;
-}
-
-void bTREE::insertInorder(string data, int time)
-{
-	if (!balanced())
-	{
-		//cout << "not balanced" << endl;
-		if (last_->root_->right_ == NULL)
-		{
-			last_->root_->right_ = new treeNode(data, time, last_->root_);
-			last_ = last_->root_->right_;
-			//cout << "right" << endl;
-		}
-		else
-		{
-			treeNode* ptr = last_->root_->root_->right_;
-			int ht = 3;
-			while (ptr->left_ != NULL)
-			{
-				ptr = last_;
-				for (int i = 0; i < ht; i++)
-				{
-					ptr = ptr->root_;
-				}
-				ptr = ptr->right_;
-				for (int i = 0; i < ht - 2; i++)
-				{
-					ptr = ptr->left_;
-				}
-				ht++;
-			}
-			ptr->left_ = new treeNode(data, time, ptr);
-			last_ = ptr->left_;
-			//cout << "left" << endl;
-		}
-	}
-	else
-	{
-		//cout << "balanced" << endl;
-		last_ = tree_;
-		while (last_->left_ != NULL)
-		{
-			last_ = last_->left_;
-		}
-		last_->left_ = new treeNode(data, time, last_);
-		last_ = last_->left_;
-		//cout << "left" << endl;
-	}
-	return;
 }
 
 int bTREE::find(string data)
 {
 	int ops = 0;
-	if (tree_ != NULL)
+	vector<treeNode*>::iterator it = leaves_.begin();
+	while (it != leaves_.end())
 	{
 		ops++;
-		bool found = false;
-		if (tree_->data_ != data)
+		if ((*it)->data_ == data)
 		{
-			if (tree_->left_ != NULL)
-			{
-				found = find(data, tree_->left_, &ops);
-			}
-			if (tree_->right_ != NULL && !found)
-			{
-				found = find(data, tree_->right_, &ops);
-			}
+			break;
 		}
-		else
-		{
-			found = true;
-		}
-		if (found == false)
-		{
-			ops = -1;
-		}
+		it++;
 	}
 	return ops;
 }
 
-bool bTREE::find(string data, treeNode *subtree, int *ops)
+string bTREE::locate(string data)
 {
-	bool found = false;
-	*ops += 1;
-	if (subtree->data_ != data)
+	string path;
+	vector<treeNode*>::iterator it = leaves_.begin();
+	while (it != leaves_.end()) //find leaf node in leaves vector
 	{
-		if (subtree->left_ != NULL)
+		if ((*it)->data_ == data)
 		{
-			found = find(data, subtree->left_, ops);
+			break;
 		}
-		if (subtree->right_ != NULL && !found)
-		{
-			found = find(data, subtree->right_, ops);
-		}
+		it++;
+	}
+	if (it == leaves_.end()) //string not found
+	{
+		path = ".";
 	}
 	else
 	{
-		found = true;
+		treeNode *ptr1 = *it;
+		treeNode *ptr2 = (*it)->root_;
+		while (ptr2 != NULL)
+		{
+			if (ptr2->left_ == ptr1)
+			{
+				path.insert(path.begin(), 'L');
+			}
+			else
+			{
+				path.insert(path.begin(), 'R');
+			}
+			ptr1 = ptr2;
+			ptr2 = ptr2->root_;
+		}
+
 	}
-	return found;
+	return path;
 }
 
-string bTREE::locate(string data)
-{
-	return "";
-}
-
-vector<string> bTREE::inorder() const
+vector<string> bTREE::inorderString() const
 {
 	vector<string> traversal;
-	inorder(traversal, tree_);
+	inorderString(traversal, tree_);
 	return traversal;
 }
 
-void bTREE::inorder(vector<string> &traversal, const treeNode *subtree) const
+void bTREE::inorderString(vector<string> &traversal, const treeNode *subtree) const
 {
 	if (subtree != NULL)
 	{
-		inorder(traversal, subtree->left_);
+		inorderString(traversal, subtree->left_);
 		traversal.push_back(subtree->data_);
-		traversal.push_back(to_string(subtree->time_));
-		inorder(traversal, subtree->right_);
+		traversal.push_back(to_string(subtree->timeStamp_));
+		inorderString(traversal, subtree->right_);
 	}
 }
 
 bool operator ==(const bTREE& lhs, const bTREE& rhs)
 {
 	bool result = false;
-	if (lhs.inorder() == rhs.inorder())
+	if (lhs.inorderString() == rhs.inorderString())
 	{
 		result = true;
 	}
@@ -247,7 +246,7 @@ bool operator ==(const bTREE& lhs, const bTREE& rhs)
 bool operator !=(const bTREE& lhs, const bTREE& rhs)
 {
 	bool result = false;
-	if (lhs.inorder() != rhs.inorder())
+	if (lhs.inorderString() != rhs.inorderString())
 	{
 		result = true;
 	}
@@ -261,17 +260,17 @@ ostream& operator <<(ostream& out, const bTREE& p)
 	return out;
 }
 
-void bTREE::display(std::ostream& outfile) const
+void bTREE::display(ostream& outfile) const
 {
-	std::string prefix;
+	string prefix;
 	if (tree_ == NULL)
 	{
-		outfile << "-" << std::endl;
+		outfile << "-" << endl;
 	}
 	else
 	{
 		displayLeft(outfile, tree_->left_, "    ");
-		outfile << "---" << tree_->data_ << std::endl;
+		outfile << "---" << tree_->data_ << endl;
 		displayRight(outfile, tree_->right_, "    ");
 	}
 	return;

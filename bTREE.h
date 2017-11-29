@@ -9,15 +9,18 @@ class bTREE
     struct treeNode
 	{
         string data_;
-        int time_;
+        int timeStamp_;
+		bool leaf_;
 		treeNode *root_;
 		treeNode *left_;
 		treeNode *right_;
 
-		treeNode(string data = "", int time = 0, treeNode *root = NULL)
+		treeNode(string data = "", int time = 0, bool leaf = true, treeNode *root = NULL)
 		{
+			//cout << "treeNode created" << endl;
 			data_ = data;
-			time_ = time;
+			timeStamp_ = time;
+			leaf_ = leaf;
 			root_ = root;
 			left_ = NULL;
 			right_ = NULL;
@@ -26,10 +29,6 @@ class bTREE
 		~treeNode()
 		{ }
 
-		bool leaf(const treeNode* node)
-		{
-			return (node->left_ == NULL && node->left_ == NULL);
-		}
     };
     
 private:
@@ -37,20 +36,16 @@ private:
     //DATASTUCTURE treeNodes tree;
     //any helper private variables you need
 	treeNode *tree_;
-	treeNode *last_;
 	int size_;
+	vector<treeNode*> leaves_;
 
 	bool empty() const;
-	int getHeight() const;
-	void insertInorder(string data, int time);
 	void destroy(treeNode *subtree);
 	void display(ostream &outfile) const;
 	void displayRight(ostream &outfile, treeNode *subtree, string prefix) const;
 	void displayLeft(ostream &outfile, treeNode *subtree, string prefix) const;
-	vector<string> inorder() const; 
-	void inorder(vector<string> &traversal, const treeNode *subtree) const;
-	bool find(string data, treeNode *subtree, int* ops);
-	bool balanced();
+	vector<string> inorderString() const; 
+	void inorderString(vector<string> &traversal, const treeNode *subtree) const;
 
 public:
     bTREE();

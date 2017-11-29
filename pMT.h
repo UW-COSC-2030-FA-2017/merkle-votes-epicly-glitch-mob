@@ -5,6 +5,8 @@
 using namespace std;
 class pMT
 {
+	friend class bTREE;
+
 private:
     int selectedHash;
     bTREE myMerkle;
@@ -19,18 +21,14 @@ public:
     
     
     int insert(string, int);
-    
-    int find(string);
+    int find(string vote, int time, int hashSelect);
     int findHash(string);
-    
-    string locate(string);
+    string locateData(string);
+	string locateHash(string);
     
     friend bool operator==(const pMT& lhs, const pMT& rhs);
-    
     friend bool operator!=(const pMT& lhs, const pMT& rhs);
-    
     friend pMT operator^(const pMT& lhs, const pMT& rhs);
-    friend std::ostream& operator<<(std::ostream& out, const pMT& p);
-    
+    friend ostream& operator<<(ostream& out, const pMT& p);
 };
 
