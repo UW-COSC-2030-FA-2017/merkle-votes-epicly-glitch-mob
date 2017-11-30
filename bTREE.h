@@ -38,6 +38,7 @@ private:
 	treeNode *tree_;
 	int size_;
 	vector<treeNode*> leaves_;
+	vector<treeNode*> branches_;
 
 	bool empty() const;
 	void destroy(treeNode *subtree);
@@ -53,13 +54,18 @@ public:
     
     int dataInserted();
     int numberOfNodes();
+	string getRoot() const; //returns root node data
+	string bTREE::getBranchData(treeNode *node); //retruns combined data of left and right nodes
+	void setData(string hash, treeNode *node); //set data to some hash value
     
     int insert(string data, int time);
-    int find(string data);
-    string locate(string data);
+    int findLeaf(string data);
+    string locateLeaf(string data);
+	int findBranch(string data);
+	string locateBranch(string data);
     
     friend bool operator ==(const bTREE& lhs, const bTREE& rhs);
     friend bool operator !=(const bTREE& lhs, const bTREE& rhs);
-    friend ostream& operator <<(std::ostream& out, const bTREE& p);
+    friend ostream& operator <<(ostream& out, const bTREE& p);
 };
 

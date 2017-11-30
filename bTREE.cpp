@@ -46,6 +46,29 @@ int bTREE::numberOfNodes()
 	return size_;
 }
 
+string bTREE::getRoot() const
+{
+	return tree_->data_;
+}
+
+void bTREE::setData(string hash, treeNode *node)
+{
+	if (!(node->leaf_))
+	{
+		node->data_ = hash;
+	}
+}
+
+string bTREE::getBranchData(treeNode *node)
+{
+	string combined;
+	if (!(node->leaf_))
+	{
+		combined = node->left_->data_ + node->right_->data_;
+	}
+	return combined;
+}
+
 int bTREE::insert(string data, int time)
 {
 	int ops;
@@ -109,6 +132,7 @@ int bTREE::insert(string data, int time)
 				{
 					ops = -1;
 				}
+				branches_.push_back(temp);
 			}
 			else
 			{
@@ -146,6 +170,7 @@ int bTREE::insert(string data, int time)
 				{
 					ops = -1;
 				}
+				branches_.push_back(temp);
 			}
 			else
 			{
@@ -160,7 +185,7 @@ int bTREE::insert(string data, int time)
 	return ops;
 }
 
-int bTREE::find(string data)
+int bTREE::findLeaf(string data)
 {
 	int ops = 0;
 	vector<treeNode*>::iterator it = leaves_.begin();
@@ -173,10 +198,34 @@ int bTREE::find(string data)
 		}
 		it++;
 	}
+	if (it == leaves_.end()) //string not found
+	{
+		ops = 0;
+	}
 	return ops;
 }
 
-string bTREE::locate(string data)
+int bTREE::findBranch(string data)
+{
+	int ops = 0;
+	vector<treeNode*>::iterator it = branches_.begin();
+	while (it != branches_.end())
+	{
+		ops++;
+		if ((*it)->data_ == data)
+		{
+			break;
+		}
+		it++;
+	}
+	if (it == branches_.end()) //string not found
+	{
+		ops = 0;
+	}
+	return ops;
+}
+
+string bTREE::locateLeaf(string data)
 {
 	string path;
 	vector<treeNode*>::iterator it = leaves_.begin();
@@ -189,6 +238,44 @@ string bTREE::locate(string data)
 		it++;
 	}
 	if (it == leaves_.end()) //string not found
+	{
+		path = ".";
+	}
+	else
+	{
+		treeNode *ptr1 = *it;
+		treeNode *ptr2 = (*it)->root_;
+		while (ptr2 != NULL)
+		{
+			if (ptr2->left_ == ptr1)
+			{
+				path.insert(path.begin(), 'L');
+			}
+			else
+			{
+				path.insert(path.begin(), 'R');
+			}
+			ptr1 = ptr2;
+			ptr2 = ptr2->root_;
+		}
+
+	}
+	return path;
+}
+
+string bTREE::locateBranch(string data)
+{
+	string path;
+	vector<treeNode*>::iterator it = branches_.begin();
+	while (it != branches_.end()) //find leaf node in leaves vector
+	{
+		if ((*it)->data_ == data)
+		{
+			break;
+		}
+		it++;
+	}
+	if (it == branches_.end()) //string not found
 	{
 		path = ".";
 	}

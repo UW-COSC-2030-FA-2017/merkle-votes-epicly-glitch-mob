@@ -1,21 +1,61 @@
 #include "bTREE.h"
 
 
-string hash_1(string text)
+string hash_1(string key)
 {
 	static const char hexmap[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-	unsigned long hash;
-	int strlen = text.length();
-	string hexHash;
+	unsigned long hash = 0;
+	int strlen = key.length();
+	string hashKey;
 
 	char character;
+	for (int i = 0; i < 64; i++)
+	{
+		character = key.at(i%strlen);
+		hash += (i + character);
+		if (i % 2 == 1)
+		{
+			hashKey.push_back(hexmap[hash % 16]);
+		}
+		
+	}
+	return hashKey;
+}
+
+string hash_2(string key)
+{
+	static const char charmap[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+		'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+	unsigned long hash;
+	int strlen = key.length();
+	string hashKey;
+
 	for (int i = 0; i < 32; i++)
 	{
-		character = text.at(i%strlen);
-		hash = (17 *i* character)%16;
-		hexHash.push_back(hexmap[hash]);
+		hash = ((key.at(i%strlen)*(key.at((i + 1) % strlen)))); //product of every two characters
+		hashKey.push_back(charmap[hash % 36]); //convert to character and add to string
+		hash = 0;
 	}
-	return hexHash;
+	return hashKey;
+}
+
+string hash_3(string key)
+{
+	static const char charmap[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+		'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+	unsigned long hash = 0;
+	int strlen = key.length();
+	string hashKey;
+
+	for (int i = 0; i < 32; i++)
+	{
+		hash += (31 * (key.at(i%strlen))*(key.at((i+1)%strlen)) ^ i); //use XOR operator
+		hash = hash % 36;
+		hashKey.push_back(charmap[hash]); //convert to character and add to string
+	}
+	return hashKey;
 }
 
 int main()
@@ -89,14 +129,24 @@ int main()
 	cout << "Nodes in B: " << B.numberOfNodes() << endl;
 	cout << "Inserted: " << B.dataInserted() << endl << endl;
 
-	cout << "Operations to find 12: " << B.find("32") << endl;
-	cout << "Path to 12: " << B.locate("12") << endl;
+	cout << "Operations to find 12: " << B.findLeaf("12") << endl;
+	cout << "Path to 12: " << B.locateLeaf("12") << endl;
 
 	if (A != B)
 	{
 		cout << "A not equal to B" << endl;
 	}
-	cout << hash_1("tex") << endl;
+	cout << hash_1("A02BB2124:Candidate1") << endl;
+	cout << hash_1("1348937365:Candidate3") << endl;
+	cout << hash_1("1348937365:Candidate3 ") << endl;
+
+	cout << endl << hash_2("A02BB2124:Candidate1") << endl;
+	cout << hash_2("1348937365:Candidate3") << endl;
+	cout << hash_2("1348937365:Candidate3 ") << endl;
+
+	cout << endl << hash_3("A02BB2124:Candidate1") << endl;
+	cout << hash_3("1348937365:Candidate3") << endl;
+	cout << hash_3("1348937365:Candidate3 ") << endl;
 
 	return 0;
 }

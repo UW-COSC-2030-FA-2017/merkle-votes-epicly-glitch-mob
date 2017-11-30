@@ -39,11 +39,10 @@ int pMT::insert(string vote, int time)
 
 {
 	int ops = myMerkle.insert(vote, time);
-
 	return ops;
 }
 
-int pMT::find(string vote, int time, int hashSelect)
+int pMT::findData(string vote, int time, int hashSelect)
 /**
  * @brief given a vote, timestamp, and hash function, does this vote exist in the tree?
  * @param vote, a string
@@ -52,7 +51,7 @@ int pMT::find(string vote, int time, int hashSelect)
  * @return 0 if not found, else number of opperations required to find the matching vote
  */
 {
-	return myMerkle.find(vote);
+	return myMerkle.findLeaf(vote);
 }
 
 int pMT::findHash(string mhash)
@@ -62,7 +61,7 @@ int pMT::findHash(string mhash)
  * @return 0 if not found, else number of opperations required to find the matching hash
  */
 {
-	return 0;
+	return myMerkle.findBranch(mhash);
 }
 
 
@@ -73,7 +72,7 @@ string pMT::locateData(string vote)
  * @return sequence of L's and R's comprising the movement to the leaf node; else return a dot '.'
  */
 {
-	return myMerkle.locate(vote);
+	return myMerkle.locateLeaf(vote);
 }
 
 string pMT::locateHash(string mhash)
@@ -83,11 +82,8 @@ string pMT::locateHash(string mhash)
  * @return sequence of L's and R's comprising the movement to the hash node, ; else return a dot '.'
  */
 {
-	return myMerkle.locate(mhash);
+	return myMerkle.locateBranch(mhash);
 }
-
-
-
 
 string pMT::hash_1(string key)
 /**
@@ -97,16 +93,19 @@ string pMT::hash_1(string key)
  */
 {
 	static const char hexmap[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-	unsigned long hash;
+	unsigned long hash = 0;
 	int strlen = key.length();
 	string hexHash;
 
 	char character;
-	for (int i = 0; i < 32; i++)
+	for (int i = 0; i < 64; i++)
 	{
-		character = key.at(i%strlen);
-		hash = (17 * i* character) % 16;
-		hexHash.push_back(hexmap[hash]);
+		character = key.at(i%strlen); //if string is less than 64 character repeat
+		hash += (i + character); //sum of every character
+		if (i % 2 == 1) 
+		{
+			hexHash.push_back(hexmap[hash % 16]); //convert to hexadecimal and add to string
+		}
 	}
 	return hexHash;
 }
@@ -118,7 +117,20 @@ string pMT::hash_2(string key)
  * @return a hash of the key
  */
 {
+	static const char charmap[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+		'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+	unsigned long hash;
+	int strlen = key.length();
+	string hashKey;
 
+	for (int i = 0; i < 32; i++)
+	{
+		hash = ((key.at(i%strlen)*(key.at((i + 1) % strlen)))); //product of every two characters
+		hashKey.push_back(charmap[hash % 36]); //convert to character and add to string
+		hash = 0;
+	}
+	return hashKey;
 }
 
 string pMT::hash_3(string key)
@@ -128,7 +140,20 @@ string pMT::hash_3(string key)
  * @return a hash of the key
  */
 {
+	static const char charmap[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+		'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+	unsigned long hash = 0;
+	int strlen = key.length();
+	string hashKey;
 
+	for (int i = 0; i < 32; i++)
+	{
+		hash += (31 * (key.at(i%strlen))*(key.at((i + 1) % strlen)) ^ i); //use XOR operator
+		hash = hash % 36;
+		hashKey.push_back(charmap[hash]); //convert to character and add to string
+	}
+	return hashKey;
 }
 
 bool operator ==(const pMT& lhs, const pMT& rhs)
@@ -156,25 +181,12 @@ bool operator !=(const pMT& lhs, const pMT& rhs)
  */
 {
 	bool result = false;
-	if (lhs.myMerkle != rhs.myMerkle)
+	if (lhs.myMerkle.getRoot() != rhs.myMerkle.getRoot())
 	{
 		result = true;
 	}
 	return result;
 }
-
-pMT operator ^=(const pMT& lhs, const pMT& rhs)
-/**
- * @brief XOR between two merkle trees
- * @param lhs, the left hand side of the equality statment
- * @param rhs, the right hand side of the equality statement
- * @return true if not equal, false otherwise
- */
-{
-	pMT A(1);
-	return A;
-}
-
 
 ostream& operator <<(ostream& out, const pMT& p)
 /**
@@ -189,14 +201,19 @@ ostream& operator <<(ostream& out, const pMT& p)
 }
 
 
-pMT operator ^(const pMT& lhs, const pMT& rhs)
+//pMT operator ^=(const pMT& lhs, const pMT& rhs)
+/**
+* @brief XOR between two merkle trees
+* @param lhs, the left hand side of the equality statment
+* @param rhs, the right hand side of the equality statement
+* @return true if not equal, false otherwise
+*/
+
+
+//pMT operator ^(const pMT& lhs, const pMT& rhs)
 /**
  * @brief Where do two trees differ
  * @param lhs
  * @param rhs
  * @return a tree comprised of the right hand side tree nodes that are different from the left
  */
-{
-	pMT A(1);
-	return A;
-}
