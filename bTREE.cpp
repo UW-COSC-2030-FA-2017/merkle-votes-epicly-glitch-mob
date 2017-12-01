@@ -1,5 +1,9 @@
-#include "bTREE.h"
+// bTREE.cpp
+// James Mock
+// 2017-11-30
+// bTREE defintions
 
+#include "bTREE.h"
 
 //look at descriptions in pMT.h for guidance on what you might need for these function to actually do
 bTREE::bTREE()
@@ -14,7 +18,7 @@ bTREE::~bTREE()
 	destroy(tree_);
 }
 
-bool bTREE::empty() const
+bool bTREE::empty() const //check if root node from valid memory
 {
 	bool empty = false;
 	if (tree_ == NULL)
@@ -36,22 +40,22 @@ void bTREE::destroy(treeNode *subtree)
 	}
 }
 
-int bTREE::dataInserted()
+int bTREE::dataInserted() //return # of leaf nodes
 {
 	return leaves_.size();
 }
 
-int bTREE::numberOfNodes()
+int bTREE::numberOfNodes() //return # of branch and leaf nodes
 {
 	return size_;
 }
 
-string bTREE::getRoot() const
+string bTREE::getRootData() const //return root data
 {
 	return tree_->data_;
 }
 
-void bTREE::setData(string hash, treeNode *node)
+void bTREE::setData(string hash, treeNode *node) //change data_ value
 {
 	if (!(node->leaf_))
 	{
@@ -59,7 +63,7 @@ void bTREE::setData(string hash, treeNode *node)
 	}
 }
 
-string bTREE::getBranchData(treeNode *node)
+string bTREE::getBranchData(treeNode *node) //returns a concatenation of left and right data_ strings
 {
 	string combined;
 	if (!(node->leaf_))
@@ -69,7 +73,7 @@ string bTREE::getBranchData(treeNode *node)
 	return combined;
 }
 
-int bTREE::insert(string data, int time)
+int bTREE::insert(string data, int time) //inserts new data as a leaf node organizes tree by timestamps
 {
 	int ops;
 	if (empty()) //first node
@@ -185,7 +189,7 @@ int bTREE::insert(string data, int time)
 	return ops;
 }
 
-int bTREE::findLeaf(string data)
+int bTREE::findLeaf(string data) //search vecotr leaves_ for value -> O(n/2) where n is the size of the tree
 {
 	int ops = 0;
 	vector<treeNode*>::iterator it = leaves_.begin();
@@ -205,7 +209,7 @@ int bTREE::findLeaf(string data)
 	return ops;
 }
 
-int bTREE::findBranch(string data)
+int bTREE::findBranch(string data) //search vecotr branches_ for value -> O(n/2) where n is the size of the tree
 {
 	int ops = 0;
 	vector<treeNode*>::iterator it = branches_.begin();
@@ -368,12 +372,12 @@ void bTREE::displayLeft(ostream &outfile, treeNode *subtree, string prefix) cons
 {
 	if (subtree == NULL)
 	{
-		outfile << prefix + "/" << endl;
+		outfile << prefix << endl;
 	}
 	else
 	{
 		displayLeft(outfile, subtree->left_, prefix + "     ");
-		outfile << prefix + "/---" << subtree->data_ << endl;
+		outfile << prefix + "/-----" << subtree->data_ << endl;
 		displayRight(outfile, subtree->right_, prefix + "|    ");
 	}
 	return;
@@ -384,12 +388,12 @@ void bTREE::displayRight(ostream &outfile, treeNode *subtree, string prefix) con
 {
 	if (subtree == NULL)
 	{
-		outfile << prefix + "\\" << endl;
+		outfile << prefix << endl;
 	}
 	else
 	{
 		displayLeft(outfile, subtree->left_, prefix + "|    ");
-		outfile << prefix + "\\---" << subtree->data_ << endl;
+		outfile << prefix + "\\-----" << subtree->data_ << endl;
 		displayRight(outfile, subtree->right_, prefix + "     ");
 	}
 	return;

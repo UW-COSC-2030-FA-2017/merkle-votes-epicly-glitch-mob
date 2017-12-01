@@ -1,3 +1,8 @@
+// pMT.cpp
+// James Mock
+// 2017-11-30
+// pMT defintions
+
 #include "pMT.h"
 
 pMT::pMT(int hashSelect)
@@ -29,6 +34,41 @@ pMT::~pMT()
 {
 }
 
+string pMT::getRootHash() const
+{
+	return myMerkle.getRootData();
+}
+
+string pMT::hash(string data)
+{
+	string hash;
+	if (selectedHash == 1)
+	{
+		hash = hash_1(data);
+	}
+	else if (selectedHash == 2)
+	{
+		hash = hash_2(data);
+	}
+	else
+	{
+		hash = hash_3(data);
+	}
+	return hash;
+}
+
+int pMT::reHash(bTREE::treeNode *node)
+{
+	int ops = 0;
+	while (node != NULL)
+	{
+		myMerkle.setData(hash(myMerkle.getBranchData(node)), node);
+		node = node->root_;
+		ops++;
+	}
+	return ops;
+}
+
 int pMT::insert(string vote, int time)
 /**
  * @brief insert a vote and time into a leaf node of tree
@@ -38,7 +78,123 @@ int pMT::insert(string vote, int time)
  */
 
 {
-	int ops = myMerkle.insert(vote, time);
+	int ops;
+	if (myMerkle.empty()) //first node
+	{
+		myMerkle.tree_ = new bTREE::treeNode(vote, time);
+		if (myMerkle.tree_ != NULL)
+		{
+			ops = 1;
+			myMerkle.size_++;
+			myMerkle.leaves_.insert(myMerkle.leaves_.begin(), myMerkle.tree_);
+		}
+		else
+		{
+			ops = -1;
+		}
+	}
+	else
+	{
+		vector<bTREE::treeNode*>::iterator it = myMerkle.leaves_.begin();
+		while (it != myMerkle.leaves_.end())
+		{
+			if (time <= (*it)->timeStamp_)
+			{
+				break;
+			}
+			it++;
+		}
+
+		if (it == myMerkle.leaves_.end()) // if largest timeStamp add to right side of last node
+		{
+			it--;
+			bTREE::treeNode *temp = NULL;
+			temp = new bTREE::treeNode("hash", -1, false, (*it)->root_); //create branch node
+			if (temp != NULL) //check if memory allocated
+			{
+				//setup pointers
+				temp->left_ = *it;
+				(*it)->root_ = temp;
+				if (*it != myMerkle.tree_) //don't setup root pointer for temp if it's the root node
+				{
+					if (temp->root_->left_ == *it)
+					{
+						temp->root_->left_ = temp;
+					}
+					else
+					{
+						temp->root_->right_ = temp;
+					}
+				}
+
+				temp->right_ = new bTREE::treeNode(vote, time, true, temp); //create new leaf node
+				if (temp->right_ != NULL) //check if memory allocated
+				{
+					temp->right_->root_ = temp;
+					myMerkle.leaves_.push_back(temp->right_); //add new leaf to end of leaves vector
+					myMerkle.size_ += 2;
+					ops = 1;
+				}
+				else
+				{
+					ops = -1;
+				}
+				myMerkle.branches_.push_back(temp);
+				ops += reHash(temp);
+			}
+			else
+			{
+				ops = -1;
+			}
+		}
+
+		else //add to left side of node
+		{
+			bTREE::treeNode *temp = NULL;
+			temp = new bTREE::treeNode("hash", -1, false, (*it)->root_); //create branch node
+			
+			if (temp != NULL) //check if memory allocated
+			{
+				//setup pointers
+				temp->right_ = *it;
+				(*it)->root_ = temp;
+
+				if (*it != myMerkle.tree_) //don't setup root pointer for temp if it's the root node
+				{
+					if (temp->root_->left_ == *it)
+					{
+						temp->root_->left_ = temp;
+					}
+					else
+					{
+						temp->root_->right_ = temp;
+					}
+				}
+				temp->left_ = new bTREE::treeNode(vote, time, true, *it); //create new leaf node
+				if (temp->left_ != NULL) //check if memory allocated
+				{
+					temp->left_->root_ = temp;
+					myMerkle.leaves_.insert(it, temp->left_); //add new leaf to leaves vector
+					myMerkle.size_ += 2;
+					ops = 1;
+				}
+				else
+				{
+					ops = -1;
+				}
+				myMerkle.branches_.push_back(temp);
+				ops += reHash(temp);
+			}
+			else
+			{
+				ops = -1;
+			}
+		}
+	}
+	while (myMerkle.tree_->root_ != NULL) //make sure tree_ = root node
+	{
+		myMerkle.tree_ = myMerkle.tree_->root_;
+	}
 	return ops;
 }
 
@@ -101,7 +257,7 @@ string pMT::hash_1(string key)
 	for (int i = 0; i < 64; i++)
 	{
 		character = key.at(i%strlen); //if string is less than 64 character repeat
-		hash += (i + character); //sum of every character
+		hash += (character*i); //sum of every character times its position
 		if (i % 2 == 1) 
 		{
 			hexHash.push_back(hexmap[hash % 16]); //convert to hexadecimal and add to string
@@ -126,9 +282,8 @@ string pMT::hash_2(string key)
 
 	for (int i = 0; i < 32; i++)
 	{
-		hash = ((key.at(i%strlen)*(key.at((i + 1) % strlen)))); //product of every two characters
+		hash = (key.at(2*i%strlen))*(key.at((2*i + 1) % strlen))+i*i; //product of every two characters plus i squared
 		hashKey.push_back(charmap[hash % 36]); //convert to character and add to string
-		hash = 0;
 	}
 	return hashKey;
 }
@@ -149,7 +304,7 @@ string pMT::hash_3(string key)
 
 	for (int i = 0; i < 32; i++)
 	{
-		hash += (31 * (key.at(i%strlen))*(key.at((i + 1) % strlen)) ^ i); //use XOR operator
+		hash += ((key.at(i%strlen))*(key.at((i + 1) % strlen))) ^ i; //product of every two characters XOR i
 		hash = hash % 36;
 		hashKey.push_back(charmap[hash]); //convert to character and add to string
 	}
@@ -181,7 +336,7 @@ bool operator !=(const pMT& lhs, const pMT& rhs)
  */
 {
 	bool result = false;
-	if (lhs.myMerkle.getRoot() != rhs.myMerkle.getRoot())
+	if (lhs.myMerkle.getRootData() != rhs.myMerkle.getRootData())
 	{
 		result = true;
 	}

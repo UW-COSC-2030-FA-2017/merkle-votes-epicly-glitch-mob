@@ -1,4 +1,10 @@
-#pragma once
+// pMT.h
+// James Mock
+// 2017-11-30
+// pMT declartion
+
+#ifndef _PMT_H_
+#define _PMT_H_
 
 #include "bTREE.h"
 #include <string>
@@ -14,13 +20,15 @@ private:
     string hash_2(string);
     string hash_3(string);
 
-	//int reHash(treeNode *node);
+	string hash(string data);
+	int reHash(bTREE::treeNode *node);
     
 public:
     pMT(int);
     ~pMT();
     
-    
+	string getRootHash() const;
+
     int insert(string vote, int time);
     int findData(string vote, int time, int hashSelect);
     int findHash(string);
@@ -32,4 +40,5 @@ public:
     //friend pMT operator^(const pMT& lhs, const pMT& rhs);
     friend ostream& operator<<(ostream& out, const pMT& p);
 };
+#endif
 
